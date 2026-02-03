@@ -1,3 +1,4 @@
+import { Report } from "@/lib/types";
 import axios from "axios";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -42,8 +43,33 @@ export const getReports = async () => {
   return data;
 };
 
+export const reportsOverview = async () => {
+  const { data } = await api.get("/reports-overview");
+  if (data?.success) return data.data;
+  return data;
+};
+
+export const reportAnalytics = async (
+  period: "weekly" | "monthly" | "yearly",
+) => {
+  const { data } = await api.get("/report-analytics", {
+    params: { period },
+  });
+  if (data?.success) return data.data;
+  return data;
+};
+
 export const deleteReport = async (reportId: string) => {
   const { data } = await api.delete(`/reports/${reportId}`);
+  if (data?.success) return data.data;
+  return data;
+};
+
+export const updateReport = async (
+  reportId: string,
+  status: Report["status"],
+) => {
+  const { data } = await api.put(`/reports/${reportId}`, { status });
   if (data?.success) return data.data;
   return data;
 };
@@ -59,7 +85,18 @@ export const growth = async (period: string) => {
 };
 
 export const getEntity = async (id: string, kind: string) => {
-  const { data } = await api.get(`/entity?entityId=${id}&kind=${kind}`);
+  const { data } = await api.get("/entity", {
+    params: {
+      entityId: id,
+      kind,
+    },
+  });
+  if (data?.success) return data.data;
+  return data;
+};
+
+export const getMessages = async (id: string) => {
+  const { data } = await api.get(`/messages/${id}`);
   if (data?.success) return data.data;
   return data;
 };

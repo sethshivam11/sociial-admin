@@ -45,7 +45,7 @@ export default async function Index() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {statsCards.map((stat, index) => (
-          <StatsCard key={stat.title} className="animate-slide-up" {...stat} />
+          <StatsCard key={index} className="animate-slide-up" {...stat} />
         ))}
       </div>
       <GrowthChart />

@@ -10,7 +10,7 @@ function ErrorComp({ error, reset }: { error: Error; reset: () => void }) {
     console.log(error);
     let errMessage = "Something went wrong";
     if (error instanceof AxiosError) {
-      errMessage = error.response?.data?.message;
+      errMessage = error.response?.data?.message || error?.message;
     } else {
       errMessage = error?.message;
     }

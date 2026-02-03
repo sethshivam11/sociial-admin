@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import TanstackProvider from "@/context/tanstack-provider";
 import { Toaster } from "sonner";
+import AuthProvider from "@/context/AuthProvider";
 
 const DMSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -25,11 +26,13 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${DMSans.className} antialiased`}>
         <TanstackProvider>
-          <Toaster position="bottom-right" richColors />
-          <div className="min-h-screen bg-background">
-            <Sidebar />
-            <main>{children}</main>
-          </div>
+          <AuthProvider>
+            <Toaster position="bottom-right" richColors />
+            <div className="min-h-screen bg-background">
+              <Sidebar />
+              <main>{children}</main>
+            </div>
+          </AuthProvider>
         </TanstackProvider>
       </body>
     </html>

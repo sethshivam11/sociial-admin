@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUsers, removeUnverifiedUsers } from "@/services/api";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -55,29 +55,30 @@ const baseUrl = process.env.NEXT_PUBLIC_WEB_URL;
 const RemoveUnverifiedDialog = () => {
   const [open, setOpen] = useState(false);
 
-  const { data, isLoading, error, isError, refetch } = useQuery({
-    queryKey: ["removeUnverified"],
-    queryFn: removeUnverifiedUsers,
-    enabled: false,
-    retry: false,
-  });
-
-  const handleRemove = async () => {
-    await refetch();
-    if (isError) {
+  const queryClient = useQueryClient();
+  const removeUnverifiedMutation = useMutation({
+    mutationFn: removeUnverifiedUsers,
+    onSuccess: () => {
+      queryClient.setQueryData<User[]>(
+        ["getUsers"],
+        (old) => old?.filter((user) => user.isMailVerified === true) ?? [],
+      );
+      setOpen(false);
+    },
+    onError: (error) => {
+      console.log(error);
+      let message = "Something went wrong";
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data?.message);
-      } else toast.error(error.message);
-    } else {
-      toast.success(data?.message);
-    }
-    setOpen(false);
-  };
+        message = error.response?.data?.message || error?.message;
+      } else message = error?.message;
+      toast.error(message);
+    },
+  });
 
   return (
     <AlertDialog open={open}>
       <AlertDialogTrigger asChild>
-        <Button className="hidden" onClick={() => setOpen(true)} variant="destructive">
+        <Button onClick={() => setOpen(true)} variant="destructive">
           <BadgeAlert />
         </Button>
       </AlertDialogTrigger>
@@ -89,7 +90,7 @@ const RemoveUnverifiedDialog = () => {
         <AlertDialogFooter>
           <AlertDialogCancel
             onClick={() => setOpen(false)}
-            disabled={isLoading}
+            disabled={removeUnverifiedMutation.isPending}
           >
             Cancel
           </AlertDialogCancel>
@@ -97,10 +98,14 @@ const RemoveUnverifiedDialog = () => {
             <Button
               variant="destructive"
               className="text-white"
-              onClick={handleRemove}
-              disabled={isLoading}
+              onClick={() => removeUnverifiedMutation.mutate()}
+              disabled={removeUnverifiedMutation.isPending}
             >
-              {isLoading ? <Loader2 className="animate-spin" /> : "Remove"}
+              {removeUnverifiedMutation.isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Remove"
+              )}
             </Button>
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -122,8 +127,8 @@ export function UserTable() {
 
   const unverifiedUsers = useMemo(() => {
     if (!data || data?.length === 0 || !Array.isArray(data)) return 0;
-    return data.reduce((user: User, acc) => {
-      if (user.isMailVerified) return acc + 1;
+    return data.reduce((acc, user: User) => {
+      if (!user.isMailVerified) return acc + 1;
       else return acc;
     }, 0);
   }, [data]);
@@ -158,6 +163,7 @@ export function UserTable() {
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                name="search"
                 placeholder="Search users..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -167,7 +173,7 @@ export function UserTable() {
             {isLoggedIn ? (
               unverifiedUsers !== 0 && <RemoveUnverifiedDialog />
             ) : (
-              <Button variant="destructive" className="hidden" onClick={handleLoginToast}>
+              <Button variant="destructive" onClick={handleLoginToast}>
                 <BadgeAlert />
               </Button>
             )}
@@ -204,29 +210,25 @@ export function UserTable() {
               <TableBody>
                 {filteredUsers?.map((user: User, index: number) => (
                   <TableRow
-                    key={user._id}
                     className="animate-fade-in hover:bg-muted/50"
                     style={{ animationDelay: `${index * 50}ms` }}
+                    key={index}
                   >
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Avatar>
-                          <AvatarImage
-                            src={
-                              user.avatar === "/sociial-avatar.svg"
-                                ? `${baseUrl}/${user.avatar}`
-                                : user.avatar
-                            }
-                          />
-                          <AvatarFallback>{user.username[0]}</AvatarFallback>
-                        </Avatar>
-                        <Link
-                          href={`${baseUrl}/${user.username}`}
-                          target="_blank"
-                        >
-                          @{user.username}
-                        </Link>
-                      </div>
+                      <Link
+                        href={`${baseUrl}/${user.username}`}
+                        target="_blank"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar>
+                            <AvatarImage src={user.avatar} />
+                            <AvatarFallback className="text-white">
+                              {user.username[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          {user.username}
+                        </div>
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <a
