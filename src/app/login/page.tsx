@@ -17,25 +17,29 @@ import Image from "next/image";
 import { useMutation } from "@tanstack/react-query";
 import { login } from "@/services/api";
 import { toast } from "sonner";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/context/AuthProvider";
 
 const LoginPage = () => {
+  const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
 
-  const router = useRouter();
-  // const { data, isLoading, isError, error, refetch, isSuccess } = useQuery({
-  //   queryKey: ["login"],
-  //   queryFn: () => login({ username, password }),
-  //   enabled: false,
-  //   retry: false,
-  // });
+  const { setIsLoggedIn } = useAuth();
+
   const loginMutation = useMutation({
     mutationFn: () => login({ username, password }),
     onSuccess: (data) => {
-      localStorage.setItem("token", data?.token);
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 1);
+      localStorage.setItem(
+        "token",
+        JSON.stringify({ token: data?.token, expiry }),
+      );
+      setIsLoggedIn(true);
       router.push("/");
     },
     onError: (error) => {
@@ -52,17 +56,6 @@ const LoginPage = () => {
     e.preventDefault();
     loginMutation.mutate();
   };
-
-  // useEffect(() => {
-  //   if (isSuccess) {
-  //     localStorage.setItem("token", data.data.token);
-  //     router.push("/");
-  //   }
-
-  //   if (isError && error) {
-  //     toast.error(error.message);
-  //   }
-  // }, [isSuccess, isError, error, data]);
 
   return (
     <div className="min-h-dvh bg-linear-0 from-stone-900 to-stone-950 flex items-center justify-center p-4">

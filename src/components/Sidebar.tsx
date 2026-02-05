@@ -12,15 +12,17 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Lobster_Two } from "next/font/google";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { logout } from "@/services/api";
 import { toast } from "sonner";
+import { AxiosError } from "axios";
+import { useAuth } from "@/context/AuthProvider";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -38,25 +40,26 @@ const lobster = Lobster_Two({
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { error, refetch, isError, isLoading } = useQuery({
-    queryKey: ["logout"],
-    queryFn: logout,
-    retry: false,
-    enabled: false,
-  });
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogOut = async () => {
-    await refetch();
-  };
+  const { isLoggedIn, setIsLoggedIn } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    console.log(localStorage);
-    if (token) setIsLoggedIn(true);
-  }, []);
+  const logOutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      localStorage.removeItem("token");
+      setIsLoggedIn(false);
+    },
+    onError: (error) => {
+      console.log(error);
+      let message = "Something went wrong";
+      if (error instanceof AxiosError) {
+        message = error.response?.data?.message || error.message;
+      } else message = error?.message;
+      toast.error(message);
+    },
+  });
 
   return (
     <header className={`${pathname.includes("/login") ? "hidden" : ""}`}>
@@ -106,11 +109,11 @@ export function Sidebar() {
           </div>
 
           <nav className="flex-1 space-y-1 px-3 py-4">
-            {navigation.map((item) => {
+            {navigation.map((item, index) => {
               const isActive = pathname === item.href;
               return (
                 <Link
-                  key={item.name}
+                  key={index}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
@@ -126,21 +129,29 @@ export function Sidebar() {
               );
             })}
           </nav>
-          <div className="px-3 py-4 hidden">
+          <div className="px-3 py-4">
             {isLoggedIn ? (
               <Button
                 variant="ghost"
                 className="w-full justify-start"
-                onClick={handleLogOut}
+                onClick={() => logOutMutation.mutate()}
+                disabled={logOutMutation.isPending}
               >
-                {isLoading ? <Loader2 className="animate-spin" /> : <LogOut />}
+                {logOutMutation.isPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <LogOut />
+                )}
                 Log Out
               </Button>
             ) : (
               <Button
                 variant="ghost"
                 className="w-full justify-start"
-                onClick={() => router.push("/login")}
+                onClick={() => {
+                  setIsOpen(false);
+                  router.push("/login");
+                }}
               >
                 <LogIn /> Log In
               </Button>

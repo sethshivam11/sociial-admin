@@ -45,7 +45,6 @@ function Growth({
   title,
   description,
   data,
-
   isError,
   error,
   period,
@@ -62,7 +61,7 @@ function Growth({
 
   const periodFormat = useMemo(() => {
     if (period === "weekly" || period === "daily") {
-      return "MMM d";
+      return "d MMM";
     } else if (period === "monthly") {
       return "MMM";
     } else {

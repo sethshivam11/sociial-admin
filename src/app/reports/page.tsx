@@ -1,6 +1,8 @@
+import { GrowthChart } from "@/components/GrowthChart";
+import { ReportsChart } from "@/components/ReportsChart";
 import { ReportsTable } from "@/components/ReportsTable";
 import { StatsCard } from "@/components/StatsCard";
-import { getReports } from "@/services/api";
+import { getReports, reportAnalytics, reportsOverview } from "@/services/api";
 import { AxiosError } from "axios";
 import {
   Flag,
@@ -19,13 +21,12 @@ interface Report {
 }
 
 export default async function ReportsPage() {
-  const data = await getReports();
+  const data = await reportsOverview();
 
-  const stats =
-    data?.reduce((acc: Record<string, number>, report: Report) => {
-      acc[report.kind] = (acc[report.kind] || 0) + 1;
-      return acc;
-    }, {}) || {};
+  const totalReports = Object.values(data?.distribution).reduce(
+    (acc: number, item) => Number(item) + acc,
+    0,
+  );
 
   return (
     <div className="px-4 py-6 lg:px-8 lg:py-8 lg:pl-68">
@@ -37,65 +38,20 @@ export default async function ReportsPage() {
           Review and manage reported content
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-4 md:grid-cols-3 mb-8">
         <StatsCard
           title="Total Reports"
-          value={data?.length || 0}
+          value={totalReports || 0}
           icon={Flag}
+          breakdown={data?.distribution}
           className="animate-slide-up"
-        />
-        <StatsCard
-          title="Problems"
-          value={stats?.problem || 0}
-          icon={OctagonAlert}
-          className="animate-slide-up"
-          style={{ animationDelay: "300ms" }}
-        />
-        <StatsCard
-          title="Chats"
-          value={stats?.chat || 0}
-          icon={Mail}
-          className="animate-slide-up"
-          style={{ animationDelay: "300ms" }}
-        />
-        <StatsCard
-          title="Posts"
-          value={stats?.post || 0}
-          icon={Image}
-          className="animate-slide-up"
-          style={{ animationDelay: "100ms" }}
-        />
-        <StatsCard
-          title="Comments"
-          value={stats?.comment || 0}
-          icon={MessageCircle}
-          className="animate-slide-up"
-          style={{ animationDelay: "200ms" }}
-        />
-        <StatsCard
-          title="Users"
-          value={stats?.user || 0}
-          icon={UsersRound}
-          className="animate-slide-up"
-          style={{ animationDelay: "300ms" }}
-        />
-        <StatsCard
-          title="Stories"
-          value={stats?.story || 0}
-          icon={CircleDashed}
-          className="animate-slide-up"
-          style={{ animationDelay: "300ms" }}
-        />
-        <StatsCard
-          title="Confessions"
-          value={stats?.confession || 0}
-          icon={MessageSquareHeart}
-          className="animate-slide-up"
-          style={{ animationDelay: "300ms" }}
         />
       </div>
-
-      <div className="animate-slide-up" style={{ animationDelay: "400ms" }}>
+      <ReportsChart />
+      <div
+        className="animate-slide-up mt-6"
+        style={{ animationDelay: "400ms" }}
+      >
         <ReportsTable />
       </div>
     </div>
