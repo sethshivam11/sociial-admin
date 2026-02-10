@@ -185,19 +185,23 @@ function ReportDialog({
                 </Badge>
               </div>
               <Separator />
-              <ScrollArea className="flex-1 p-4 max-h-[80vh]">
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-40">
-                    <Loader2 className="animate-spin" />
-                  </div>
-                ) : (
-                  <Entity
-                    entity={data}
-                    kind={report?.kind}
-                    user={report.user}
-                  />
-                )}
-              </ScrollArea>
+              {report?.kind === "chat" ? (
+                <Entity entity={data} kind={report?.kind} user={report?.user} />
+              ) : (
+                <ScrollArea className="flex-1 p-4 max-h-[80vh]">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-40">
+                      <Loader2 className="animate-spin" />
+                    </div>
+                  ) : (
+                    <Entity
+                      entity={data}
+                      kind={report?.kind}
+                      user={report.user}
+                    />
+                  )}
+                </ScrollArea>
+              )}
             </div>
           )}
           <div
