@@ -37,9 +37,9 @@ const Asset = ({
 
   switch (kind) {
     case "post":
-      if (!post) {
+      if (!post || !post?._id) {
         return (
-          <div className="flex flex-col justify-center text-left p-3">
+          <div className="flex flex-col justify-center text-left p-3 bg-muted rounded-xl my-1.5">
             <h3 className="font-semibold">Post unavailable</h3>
             <p className="text-stone-500 text-sm">
               This might have been deleted or is no longer available.
@@ -48,11 +48,11 @@ const Asset = ({
         );
       } else {
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 my-1.5">
             <Link
               href={
-                post.kind === "video"
-                  ? `${process.env.NEXT_PUBLIC_WEB_URL}/video/${post._id}`
+                post?.kind === "video"
+                  ? `${process.env.NEXT_PUBLIC_WEB_URL}/video/${post?._id}`
                   : `${process.env.NEXT_PUBLIC_WEB_URL}/post/${post?._id}`
               }
               target="_blank"
@@ -60,37 +60,39 @@ const Asset = ({
             >
               <div className="flex items-center p-2 pb-0 gap-2">
                 <Avatar>
-                  <AvatarImage src={post.user.avatar} />
-                  <AvatarFallback>{post.user?.username[0]}</AvatarFallback>
+                  <AvatarImage src={post?.user?.avatar} />
+                  <AvatarFallback>{post?.user?.username[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col justify-center">
                   <h1 className="font-semibold tracking-tight leading-3">
                     {post?.user?.fullName}
                   </h1>
                   <span className="text-stone-500 text-sm">
-                    @{post.user?.username}
+                    @{post?.user?.username}
                   </span>
                 </div>
               </div>
               <Image
                 src={
-                  post.kind === "image" ? post.media[0] : post.thumbnail || ""
+                  post?.kind === "image"
+                    ? post?.media[0]
+                    : post?.thumbnail || ""
                 }
                 width="240"
                 height="240"
                 alt=""
                 className={`pointer-events-none aspect-square select-none object-contain ${
-                  post.caption ? "" : "rounded-b-xl"
+                  post?.caption ? "" : "rounded-b-xl"
                 }`}
               />
-              {post.kind === "video" && (
+              {post?.kind === "video" && (
                 <div className="bg-transparent/50 text-sm text-white backdrop-blur-sm rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-2">
                   <PlayIcon className="size-6 sm:size-8" />
                 </div>
               )}
-              {post.caption && (
+              {post?.caption && (
                 <span className="px-3 pb-2 pt-1 truncate w-60">
-                  {post.caption}
+                  {post?.caption}
                 </span>
               )}
             </Link>
@@ -124,7 +126,8 @@ const Asset = ({
           alt=""
           width="160"
           height="160"
-          className="w-full h-full"
+          className="w-40 min-h-20 max-h-40 object-contain"
+          draggable={false}
         />
       );
     case "video":
@@ -181,10 +184,11 @@ const Asset = ({
 };
 
 function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: [`messages-${chat?._id}`],
     queryFn: () => getMessages(chat?._id),
-    enabled: false,
+    refetchOnMount: "always",
+    enabled: !!chat?._id,
   });
 
   const reciever = useMemo(() => {
@@ -200,11 +204,6 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
     });
     return Array.from(threeEmojis).join("");
   }
-
-  useEffect(() => {
-    refetch();
-    console.log(chat);
-  }, []);
 
   return (
     <div className="flex flex-col justify-between h-full relative">
@@ -233,7 +232,7 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
           </div>
         </div>
       )}
-      <ScrollArea className="max-h-[80vh] flex-1 px-3 py-2 w-full">
+      <ScrollArea className="max-h-[70vh] flex-1 px-3 w-full">
         {isLoading && (
           <div className="flex items-center justify-center h-40">
             <Loader2 className="animate-spin" />
@@ -242,7 +241,7 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
         {data?.map((message: Message, index: number) => (
           <div
             className={cn(
-              "flex flex-col justify-center gap-1 relative",
+              "flex flex-col justify-center gap-1 relative py-2",
               message?.sender?._id === reporter ? "items-end" : "items-start",
               inter.className,
             )}
@@ -265,20 +264,35 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
               >
                 {message?.content}
               </div>
-            ) : (
+            ) : message?.kind === "post" ? (
               <Asset
                 content={message?.content}
                 post={message?.post}
                 kind={message?.kind}
               />
+            ) : (
+              <div
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-sm",
+                  message?.sender?._id === reporter
+                    ? "bg-stone-800 text-white"
+                    : "bg-stone-200 text-black",
+                )}
+              >
+                <Asset
+                  content={message?.content}
+                  post={message?.post}
+                  kind={message?.kind}
+                />
+              </div>
             )}
             {message?.reacts?.length > 0 && (
               <div
                 className={cn(
-                  "rounded-xl text-xs p-0.5 -mt-3 border",
+                  "rounded-xl text-xs p-0.5 -mt-3 border border-muted",
                   message?.sender?._id === reporter
-                    ? "border-stone-800 bg-background text-white"
-                    : "border-stone-200 bg-foreground text-black",
+                    ? "bg-background text-white"
+                    : "bg-foreground text-black",
                 )}
               >
                 {getUniqueEmojis(message?.reacts)}
