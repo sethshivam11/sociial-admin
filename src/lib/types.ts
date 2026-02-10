@@ -73,6 +73,12 @@ export interface Comment {
 export interface Chat {
   _id: string;
   users: BasicUser[];
+  groupIcon: string;
+  isGroupChat: boolean;
+  admin: string[];
+  lastMessage: string;
+  createdAt: string;
+  groupName: string;
 }
 
 export interface Message {

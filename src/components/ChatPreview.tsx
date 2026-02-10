@@ -10,7 +10,7 @@ import { DownloadIcon, FileIcon, Loader2, PlayIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getMessages } from "@/services/api";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 const inter = Inter({
   weight: "400",
@@ -187,6 +187,10 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
     enabled: false,
   });
 
+  const reciever = useMemo(() => {
+    return chat?.users?.find((user) => user._id !== reporter);
+  }, [chat, reporter]);
+
   function getUniqueEmojis(reacts: Message["reacts"]): string {
     let threeEmojis = new Set<string>();
     reacts.map((react) => {
@@ -199,11 +203,37 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
 
   useEffect(() => {
     refetch();
+    console.log(chat);
   }, []);
 
   return (
-    <div className="pb-16 relative">
-      <ScrollArea className="max-h-[80vh]">
+    <div className="flex flex-col justify-between h-full relative">
+      {chat?.isGroupChat ? (
+        <div className="flex items-center gap-2 p-3 w-full bg-muted">
+          <Avatar>
+            <AvatarImage src={chat?.groupIcon} />
+            <AvatarFallback>{chat?.groupName?.[0] || "G"}</AvatarFallback>
+          </Avatar>
+          <div className="">{chat?.groupName}</div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 p-3 w-full bg-muted">
+          <Avatar>
+            <AvatarImage src={reciever?.avatar} />
+            <AvatarFallback>{reciever?.username?.[0]}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-0.5 justify-center">
+            <p className="tracking-tight font-semibold leading-2">
+              {reciever?.fullName}
+            </p>
+            <span className="text-muted-foreground text-xs">
+              {reciever?.username && "@"}
+              {reciever?.username}
+            </span>
+          </div>
+        </div>
+      )}
+      <ScrollArea className="max-h-[80vh] flex-1 px-3 py-2 w-full">
         {isLoading && (
           <div className="flex items-center justify-center h-40">
             <Loader2 className="animate-spin" />
@@ -212,7 +242,7 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
         {data?.map((message: Message, index: number) => (
           <div
             className={cn(
-              "flex flex-col justify-center gap-1 mt-2 relative",
+              "flex flex-col justify-center gap-1 relative",
               message?.sender?._id === reporter ? "items-end" : "items-start",
               inter.className,
             )}
@@ -257,6 +287,7 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
                 )}
               </div>
             )}
+
             {message?.createdAt && (
               <span
                 className={cn(
@@ -268,10 +299,16 @@ function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
                 {format(parseISO(message?.createdAt), "h:mm aaa")}
               </span>
             )}
+            {chat?.isGroupChat && (
+              <Avatar className="size-4">
+                <AvatarImage src={message?.sender?.avatar} />
+                <AvatarFallback>{message?.sender?.username[0]}</AvatarFallback>
+              </Avatar>
+            )}
           </div>
         ))}
       </ScrollArea>
-      <div className="absolute flex flex-col gap-2 pt-2 bottom-0 left-0 bg-background w-full border-t">
+      <div className="flex flex-col gap-2 p-2 bg-background w-full border-t">
         <div className="text-xs uppercase text-muted-foreground">
           Participants:
         </div>
