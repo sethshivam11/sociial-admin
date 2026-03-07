@@ -106,7 +106,7 @@ function LoginDistribution() {
                             y={(viewBox.cy || 0) + 4}
                             className="fill-muted-foreground"
                           >
-                            Calls
+                            Total
                           </tspan>
                         </text>
                       );
