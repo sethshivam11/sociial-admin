@@ -17,10 +17,24 @@ import {
   BadgeAlert,
   AlertTriangle,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  XIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { getUsers, removeUnverifiedUsers } from "@/services/api";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -38,6 +52,14 @@ import {
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { useDebounceValue } from "usehooks-ts";
 
 interface User {
   _id: string;
@@ -63,6 +85,7 @@ const RemoveUnverifiedDialog = () => {
         ["getUsers"],
         (old) => old?.filter((user) => user.isMailVerified === true) ?? [],
       );
+      queryClient.invalidateQueries({ queryKey: ["getUsers"] });
       setOpen(false);
     },
     onError: (error) => {
@@ -78,9 +101,16 @@ const RemoveUnverifiedDialog = () => {
   return (
     <AlertDialog open={open}>
       <AlertDialogTrigger asChild>
-        <Button onClick={() => setOpen(true)} variant="destructive">
-          <BadgeAlert />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button onClick={() => setOpen(true)} variant="destructive">
+              <BadgeAlert />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Remove Unverified Users</p>
+          </TooltipContent>
+        </Tooltip>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogTitle>Remove Unverified Users</AlertDialogTitle>
@@ -119,28 +149,21 @@ export function UserTable() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [query, setQuery] = useState("");
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["getUsers"],
-    queryFn: getUsers,
+  const [page, setPage] = useState(1);
+
+  const [search] = useDebounceValue(query, 500);
+  const { data, isLoading, isFetching, isError, error } = useQuery({
+    queryKey: ["getUsers", page, search.trim()],
+    queryFn: () => getUsers(page, search.trim()),
+    placeholderData: keepPreviousData,
+    staleTime: 15 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   });
 
   const unverifiedUsers = useMemo(() => {
-    if (!data || data?.length === 0 || !Array.isArray(data)) return 0;
-    return data.reduce((acc, user: User) => {
-      if (!user.isMailVerified) return acc + 1;
-      else return acc;
-    }, 0);
+    if (!data?.users?.length) return 0;
+    return data.users.filter((user: User) => !user.isMailVerified).length;
   }, [data]);
-
-  const filteredUsers = useMemo(() => {
-    if (query === "") return data;
-    return data?.filter(
-      (user: User) =>
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.email.toLowerCase().includes(query.toLowerCase()),
-    );
-  }, [data, query]);
 
   const handleLoginToast = () => {
     toast.warning("Please login to continue");
@@ -151,6 +174,10 @@ export function UserTable() {
     const token = localStorage.getItem("token");
     if (!!token) setIsLoggedIn(true);
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   return (
     <Card className="border-0 shadow-card">
@@ -169,29 +196,45 @@ export function UserTable() {
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-9 bg-secondary border-0"
               />
+              {query?.length > 0 && (
+                <button
+                  className="absolute right-0 p-1 text-muted-foreground rounded top-1/2 -translate-1/2 cursor-default"
+                  onClick={() => setQuery("")}
+                >
+                  <XIcon size="16" />
+                </button>
+              )}
             </div>
-            {isLoggedIn ? (
-              unverifiedUsers !== 0 && <RemoveUnverifiedDialog />
-            ) : (
-              <Button variant="destructive" onClick={handleLoginToast}>
-                <BadgeAlert />
-              </Button>
-            )}
+            {isLoggedIn &&
+              (unverifiedUsers !== 0 ? (
+                <RemoveUnverifiedDialog />
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="destructive" onClick={handleLoginToast}>
+                      <BadgeAlert />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Remove Unverified Users</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isLoading || isFetching ? (
           <div className="grid place-content-center h-48">
             <Loader2 className="animate-spin" />
           </div>
-        ) : filteredUsers?.length === 0 || isError ? (
+        ) : data?.users?.length === 0 || isError ? (
           <div className="flex flex-col items-center justify-center gap-2 h-32">
             <AlertTriangle size="40" />
             <p className="text-xl font-semibold tracking-tight">
               {isError
                 ? error?.message || "Something went wrong"
-                : "No users found"}
+                : `No users found`}
             </p>
           </div>
         ) : (
@@ -208,7 +251,7 @@ export function UserTable() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers?.map((user: User, index: number) => (
+                {data?.users?.map((user: User, index: number) => (
                   <TableRow
                     className="animate-fade-in hover:bg-muted/50"
                     style={{ animationDelay: `${index * 50}ms` }}
@@ -274,6 +317,45 @@ export function UserTable() {
           </div>
         )}
       </CardContent>
+      {data?.users?.length > 0 && data?.maxPages > 1 && (
+        <CardFooter>
+          <Pagination>
+            <PaginationContent>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-muted-foreground"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                <ChevronLeft size="20" />
+              </Button>
+              {Array.from({ length: Math.ceil(data?.max / data?.limit) }).map(
+                (_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      className="cursor-default"
+                      onClick={() => setPage(index + 1)}
+                      isActive={data?.page === index + 1}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ),
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-muted-foreground"
+                disabled={page === Math.ceil(data?.max / data?.limit)}
+                onClick={() => setPage(page + 1)}
+              >
+                <ChevronRight size="20" />
+              </Button>
+            </PaginationContent>
+          </Pagination>
+        </CardFooter>
+      )}
     </Card>
   );
 }

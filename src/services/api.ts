@@ -31,14 +31,20 @@ export const userStats = async () => {
   return data;
 };
 
-export const getUsers = async () => {
-  const { data } = await api.get("/users");
+export const getUsers = async (page: number, query: string) => {
+  const { data } = await api.get(`/users?page=${page}&search=${query}`);
   if (data?.success) return data.data;
   return data;
 };
 
-export const getReports = async () => {
-  const { data } = await api.get("/reports");
+export const loginDistribution = async () => {
+  const { data } = await api.get("/login-distribution");
+  if (data?.success) return data.data;
+  return data;
+};
+
+export const getReports = async (page: number, filter?: string) => {
+  const { data } = await api.get(`/reports?page=${page}&status=${filter}`);
   if (data?.success) return data.data;
   return data;
 };

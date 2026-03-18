@@ -16,7 +16,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { useQuery } from "@tanstack/react-query";
-import { getUsers } from "@/services/api";
+import { getUsers, loginDistribution } from "@/services/api";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -34,8 +34,9 @@ const loginConfig = {
 function LoginDistribution() {
   const { data, isError, error, isLoading } = useQuery({
     queryKey: ["getUsers"],
-    queryFn: getUsers,
+    queryFn: loginDistribution,
     gcTime: 15 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
   });
 
   const loginData = useMemo(() => {
@@ -132,7 +133,7 @@ function LoginDistribution() {
           </ChartContainer>
         )}
       </CardContent>
-      {!isLoading && (
+      {!isLoading && !isError && (
         <CardFooter>
           <div className="flex items-center justify-center gap-3 w-full text-sm text-muted-foreground">
             <div className="space-x-1">
