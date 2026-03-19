@@ -85,7 +85,7 @@ function ReportDialog({
 
   const [status, setStatus] = useState(report?.status || "pending");
   const { data, isLoading, refetch } = useQuery({
-    queryKey: [`entity-${report.entityId}`],
+    queryKey: ["entity", report.entityId],
     queryFn: () => getEntity(report.entityId, report.kind),
     gcTime: 15 * 60 * 60,
     enabled: false,

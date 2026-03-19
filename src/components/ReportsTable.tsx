@@ -10,26 +10,20 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  ImageIcon,
-  MessageCircle,
   AlertTriangle,
-  OctagonAlert,
-  UserRound,
-  MessageSquareHeart,
   Loader2,
   Trash2,
   Eye,
-  ChevronDownIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
 import { deleteReport, getReports } from "@/services/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,7 +40,7 @@ import {
   AlertDialogCancel,
   AlertDialogFooter,
 } from "./ui/alert-dialog";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { Report } from "@/lib/types";
@@ -62,6 +56,12 @@ import {
 import { Label } from "./ui/label";
 import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from "next/navigation";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
 
 const DeleteDialog = ({
   open,
@@ -153,18 +153,17 @@ export function ReportsTable() {
   const [deleteDialog, setDeleteDialog] = useState({ id: "", open: false });
   const [viewDialog, setViewDialog] = useState(initialState);
   const [filter, setFilter] = useState<Report["status"] | "all">("all");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["reportsData"],
-    queryFn: getReports,
+    queryKey: ["reportsData", page, filter],
+    queryFn: () => {
+      const res = getReports(page, filter === "all" ? "" : filter);
+      return res;
+    },
     gcTime: 15 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
   });
-
-  const filteredReports = useMemo(() => {
-    if (!data || !Array.isArray(data)) return [];
-    if (filter === "all") return data;
-    return data.filter((report: Report) => report.status === filter);
-  }, [data, filter]);
 
   return (
     <>
@@ -198,7 +197,7 @@ export function ReportsTable() {
             <div className="grid place-content-center h-48">
               <Loader2 className="animate-spin" />
             </div>
-          ) : !filteredReports || filteredReports?.length === 0 || isError ? (
+          ) : !data || data?.length === 0 || isError ? (
             <div className="flex flex-col items-center justify-center gap-2 h-32">
               <AlertTriangle size="40" />
               <p className="text-xl font-semibold tracking-tight">
@@ -223,7 +222,7 @@ export function ReportsTable() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReports?.map((report: Report, index: number) => {
+                  {data?.reports?.map((report: Report, index: number) => {
                     const TypeIcon = getIcon(report.kind);
                     return (
                       <TableRow
@@ -321,6 +320,45 @@ export function ReportsTable() {
             </div>
           )}
         </CardContent>
+        {data?.reports?.length > 0 && data?.maxPages > 1 && (
+          <CardFooter>
+            <Pagination>
+              <PaginationContent>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  <ChevronLeft size="20" />
+                </Button>
+                {Array.from({
+                  length: Math.ceil(data?.max / data?.limit),
+                }).map((_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      className="cursor-default"
+                      onClick={() => setPage(index + 1)}
+                      isActive={data?.page === index + 1}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  disabled={page === Math.ceil(data?.max / data?.limit)}
+                  onClick={() => setPage(page + 1)}
+                >
+                  <ChevronRight size="20" />
+                </Button>
+              </PaginationContent>
+            </Pagination>
+          </CardFooter>
+        )}
       </Card>
       <DeleteDialog
         id={deleteDialog.id}

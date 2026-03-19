@@ -172,9 +172,10 @@ export function GrowthChart({
   const [period, setPeriod] = useState("weekly");
 
   const { data, isError, error, isLoading } = useQuery({
-    queryKey: [`growth-${period}`],
+    queryKey: ["growth", period],
     queryFn: () => growth(period),
     gcTime: 15 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
   });
 
   return (

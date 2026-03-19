@@ -39,6 +39,7 @@ export function MessageChart() {
     queryKey: ["message-analytics"],
     queryFn: messageAnalytics,
     gcTime: 15 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
   });
 
   return (

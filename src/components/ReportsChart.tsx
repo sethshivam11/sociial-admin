@@ -91,9 +91,10 @@ export function ReportsChart() {
   }, [period]);
 
   const { data, isError, error, isLoading } = useQuery({
-    queryKey: [`report-analytics-${period}`],
+    queryKey: ["report-analytics", period],
     queryFn: () => reportAnalytics(period),
     gcTime: 15 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
   });
 
   const reportDistribution = useMemo(() => {

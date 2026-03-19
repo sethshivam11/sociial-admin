@@ -185,7 +185,7 @@ const Asset = ({
 
 function ChatPreview({ chat, reporter }: { chat: Chat; reporter: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: [`messages-${chat?._id}`],
+    queryKey: ["messages", chat?._id],
     queryFn: () => getMessages(chat?._id),
     refetchOnMount: "always",
     enabled: !!chat?._id,
