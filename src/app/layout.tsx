@@ -14,7 +14,43 @@ const DMSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Sociial Admin",
   description:
-    "An admin dashboard to manage Sociial platform (a social media platform built over web).",
+    "A centralized administrative dashboard built to oversee platform activity, manage content workflows, handle reports, and analyze engagement across posts, videos, and other media — empowering efficient moderation and data-driven decisions",
+  icons: {
+    apple: "/apple-touch-icon.png",
+    icon: "/favicon.ico",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    title: "Sociial Admin",
+    description:
+      "A centralized administrative dashboard built to oversee platform activity, manage content workflows, handle reports, and analyze engagement across posts, videos, and other media — empowering efficient moderation and data-driven decisions",
+    siteName: "Sociial Admin",
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        type: "image/jpg",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sociial Admin",
+    description:
+      "A centralized administrative dashboard built to oversee platform activity, manage content workflows, handle reports, and analyze engagement across posts, videos, and other media — empowering efficient moderation and data-driven decisions",
+    creator: "@sethshivam11",
+    siteId: "765045797750706176",
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        type: "image/jpg",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

@@ -14,18 +14,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "./ui/chart";
-import {
-  CartesianGrid,
-  Line,
-  XAxis,
-  LineChart,
-  YAxis,
-  PieChart,
-  Pie,
-} from "recharts";
+import { CartesianGrid, Line, XAxis, LineChart, PieChart, Pie } from "recharts";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { growth, reportAnalytics } from "@/services/api";
+import { reportAnalytics } from "@/services/api";
 import { format, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import {
@@ -48,32 +40,39 @@ const distributionConfig = {
   chat: {
     label: "Chats",
     color: "var(--chart-1)",
+    chip: "bg-chart-1",
   },
   post: {
     label: "Posts",
     color: "var(--chart-2)",
+    chip: "bg-chart-2",
   },
   user: {
     label: "Users",
     color: "var(--chart-3)",
+    chip: "bg-chart-3",
   },
   problem: {
     label: "Problems",
     color: "var(--chart-4)",
+    chip: "bg-chart-4",
   },
   comment: {
     label: "Comments",
     color: "var(--chart-5)",
+    chip: "bg-chart-5",
   },
   story: {
     label: "Stories",
     color: "oklch(71.5% 0.143 215.221)",
+    chip: "bg-cyan-500",
   },
   confession: {
     label: "Confessions",
     color: "oklch(90.5% 0.182 98.111)",
+    chip: "bg-yellow-300",
   },
-} satisfies ChartConfig;
+};
 
 export function ReportsChart() {
   const [period, setPeriod] = useState<"weekly" | "monthly" | "yearly">(
@@ -181,7 +180,7 @@ export function ReportsChart() {
                               ? "yyyy"
                               : period === "monthly"
                                 ? "MMMM, yyyy"
-                                : "dd MMMM",
+                                : "d MMMM",
                           )
                         }
                         hideIndicator
@@ -243,34 +242,20 @@ export function ReportsChart() {
         </CardContent>
         <CardFooter>
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground w-3/4 mx-auto">
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-chart-1" />
-              <span>Chats</span>
-            </div>
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-chart-2" />
-              <span>Posts</span>
-            </div>
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-chart-3" />
-              <span>Users</span>
-            </div>
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-chart-4" />
-              <span>Problems</span>
-            </div>
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-chart-5" />
-              <span>Comments</span>
-            </div>
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-cyan-500" />
-              <span>Stories</span>
-            </div>
-            <div className="space-x-1">
-              <div className="h-3 w-3 inline-block rounded bg-yellow-300" />
-              <span>Confessions</span>
-            </div>
+            {data?.distribution?.length > 0 &&
+              data?.distribution?.map(
+                (
+                  { _id }: { _id: keyof typeof distributionConfig },
+                  index: number,
+                ) => (
+                  <div className="space-x-1" key={index}>
+                    <div
+                      className={`h-3 w-3 inline-block rounded ${distributionConfig[_id]?.chip}`}
+                    />
+                    <span>{distributionConfig[_id]?.label}</span>
+                  </div>
+                ),
+              )}
           </div>
         </CardFooter>
       </Card>
