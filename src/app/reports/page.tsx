@@ -1,24 +1,8 @@
-import { GrowthChart } from "@/components/GrowthChart";
 import { ReportsChart } from "@/components/ReportsChart";
 import { ReportsTable } from "@/components/ReportsTable";
 import { StatsCard } from "@/components/StatsCard";
-import { getReports, reportAnalytics, reportsOverview } from "@/services/api";
-import { AxiosError } from "axios";
-import {
-  Flag,
-  Image,
-  MessageCircle,
-  UsersRound,
-  Mail,
-  CircleDashed,
-  OctagonAlert,
-  MessageSquareHeart,
-} from "lucide-react";
-import { toast } from "sonner";
-
-interface Report {
-  kind: string;
-}
+import { reportsOverview } from "@/services/api";
+import { Flag } from "lucide-react";
 
 export default async function ReportsPage() {
   const data = await reportsOverview();
@@ -44,6 +28,12 @@ export default async function ReportsPage() {
           value={totalReports || 0}
           icon={Flag}
           breakdown={data?.distribution}
+          className="animate-slide-up"
+        />
+        <StatsCard
+          title="Report Types"
+          value={totalReports || 0}
+          icon={Flag}
           className="animate-slide-up"
         />
       </div>

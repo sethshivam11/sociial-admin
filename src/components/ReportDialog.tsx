@@ -83,7 +83,7 @@ function ReportDialog({
   const { isLoggedIn } = useAuth();
   const router = useRouter();
 
-  const [status, setStatus] = useState(report?.status || "pending");
+  const [status, setStatus] = useState(report?.status);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["entity", report.entityId],
     queryFn: () => getEntity(report.entityId, report.kind),
